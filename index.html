@@ -507,6 +507,15 @@ footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted
       <button class="btn btn-brand mt" onclick="processPayment()">Simular cobro con Mercado Pago</button>
       <button class="btn btn-ghost mt" onclick="closePayment()">Cancelar</button>
     </div>
+    <!-- Paso: acercar tarjeta (NFC, simulación) -->
+    <div id="payStepNfc" class="hidden center">
+      <h3>Esperando tarjeta…</h3>
+      <div class="nfc-rings"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a11.5 11.5 0 0 1 0 12M13 3.5a16 16 0 0 1 0 17"/></svg></div>
+      <p class="small">Acerca la tarjeta del metro o del banco al teléfono y luego confirma que se detectó.</p>
+      <p class="small">La tarjeta no se lee de verdad: es una simulación para la demo.</p>
+      <button class="btn btn-brand mt" onclick="confirmNfcTap()">Tarjeta detectada (simulación)</button>
+      <button class="btn btn-ghost mt" onclick="cancelNfcTap()">Volver</button>
+    </div>
     <!-- Paso: procesando -->
     <div id="payStepProcessing" class="hidden center">
       <h3>Procesando pago…</h3><div class="spinner"></div>
@@ -1003,15 +1012,16 @@ function renderInvBar(){
 function openPayment(){
   if(cartTotal()<=0) return;
   $('confirmAmt').textContent = money(cartTotal());
+  state.nfcTapDone = false;
   showPayStep('payStepConfirm'); setMethod(state.method||'qr'); setResult('ok');
   $('payOverlay').classList.add('open');
 }
 function closePayment(){ $('payOverlay').classList.remove('open'); }
 function showPayStep(id){
-  ['payStepConfirm','payStepProcessing','payStepResult'].forEach(function(s){ $(s).classList.toggle('hidden', s!==id); });
+  ['payStepConfirm','payStepNfc','payStepProcessing','payStepResult'].forEach(function(s){ $(s).classList.toggle('hidden', s!==id); });
 }
 function setMethod(m){
-  state.method = m;
+  state.method = m; state.nfcTapDone = false;
   document.querySelectorAll('#methodSeg button').forEach(function(b){ b.classList.toggle('active', b.dataset.method===m); });
   var d = $('methodDetail');
   if(m==='qr'){
@@ -1023,7 +1033,7 @@ function setMethod(m){
       '<p class="small" style="margin-top:8px">Monto exacto: <b>'+money(cartTotal())+'</b>. La confirmación llega por SPEI.</p>';
   } else {
     d.innerHTML = '<div class="nfc-rings"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a11.5 11.5 0 0 1 0 12M13 3.5a16 16 0 0 1 0 17"/></svg></div>' +
-      '<p class="small">Acerca la tarjeta o el teléfono de tu cliente a tu dispositivo para cobrar <b>'+money(cartTotal())+'</b> sin contacto.</p>';
+      '<p class="small">Acerca la tarjeta o el teléfono de tu cliente a tu dispositivo para cobrar <b>'+money(cartTotal())+'</b> sin contacto. Al confirmar, la app esperará la tarjeta.</p>';
   }
 }
 function qrSvg(){
@@ -1042,10 +1052,21 @@ function setResult(r){
   document.querySelectorAll('#resultSeg button').forEach(function(b){ b.classList.toggle('active', b.dataset.result===r); });
 }
 function retryPayment(){
-  setResult('ok');
+  setResult('ok'); state.nfcTapDone = false;
+  showPayStep('payStepConfirm');
+}
+function confirmNfcTap(){
+  state.nfcTapDone = true;
+  processPayment();
+}
+function cancelNfcTap(){
   showPayStep('payStepConfirm');
 }
 function processPayment(){
+  if(state.method==='nfc' && !state.nfcTapDone){
+    showPayStep('payStepNfc');
+    return;
+  }
   showPayStep('payStepProcessing');
   procesarPagoMercadoPago(cartTotal(), state.method, state.result).then(function(res){
     var now = new Date();
