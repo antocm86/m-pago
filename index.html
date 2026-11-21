@@ -133,6 +133,13 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
 /* Gráficas de Inicio */
 .charts-card{padding:18px;margin-top:14px}
 .charts-card h3{font-size:16.5px;margin-bottom:4px}
+.tap{cursor:pointer}
+.tap-hint{font-size:12.5px;font-weight:800;opacity:.95;margin-top:10px;position:relative;z-index:1}
+/* Estadísticas */
+.stats2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat .money{font-family:'Sora';font-size:26px;display:block;color:var(--brand-strong)}
+.stat .count{font-size:12px;color:var(--muted);font-weight:700;display:block;margin-top:2px}
+@media(max-width:480px){.stat .money{font-size:22px}}
 .chart-sub{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
 .chart-sub:first-of-type{margin-top:8px}
 .chart-row{display:grid;grid-template-columns:104px 1fr 76px;gap:10px;align-items:center;margin-bottom:8px}
@@ -238,7 +245,6 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
 @keyframes spin{to{transform:rotate(360deg)}}
 .center{text-align:center}
 .hidden{display:none!important}
-footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted);font-size:12.5px;line-height:1.6}
 
 /* ---------- MARCO DE TELÉFONO EN COMPUTADORA (versión web, a petición de Anto 16 nov) ----------
    En computadora la app se ve como teléfono (columna de 430px centrada, con marco y
@@ -249,7 +255,6 @@ footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted
   .sidenav{display:none!important}
   .bottomnav{display:grid!important;left:50%;transform:translateX(-50%);width:430px;max-width:100vw;border:1.5px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0}
   #authView{max-width:430px}
-  footer.note{max-width:430px}
   .sheet{max-width:400px}
 }
 </style>
@@ -342,10 +347,11 @@ footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted
       <main>
         <!-- INICIO -->
         <section class="view active" id="view-inicio">
-          <div class="balance card">
+          <div class="balance card tap" onclick="goView('estadisticas')">
             <span>Total cobrado hoy</span>
             <div class="big" id="todayTotal">$0.00</div>
             <div class="sub" id="todaySub">Sin cobros todavía en esta sesión</div>
+            <div class="tap-hint">Toca para ver tus estadísticas ›</div>
           </div>
           <div class="stats">
             <div class="stat"><b id="statOk">0</b><span>Pagos exitosos</span></div>
@@ -353,9 +359,9 @@ footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted
             <div class="stat"><b id="statTx">0</b><span>Movimientos totales</span></div>
           </div>
 
-          <div class="card charts-card">
+          <div class="card charts-card tap" onclick="goView('estadisticas')">
             <h3>Gráficas</h3>
-            <p class="small" style="margin:0 0 12px">Tus cobros confirmados, sin salir de Inicio.</p>
+            <p class="small" style="margin:0 0 12px">Tus cobros confirmados, sin salir de Inicio. Toca aquí para ver las estadísticas completas ›</p>
             <div id="chartsEmpty" class="empty" style="display:none">Aún no hay cobros para graficar — haz tu primer cobro.</div>
             <div id="chartsBody">
               <h4 class="chart-sub">Cobros de hoy por método</h4>
@@ -373,6 +379,30 @@ footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted
 
           <h3 class="section-title">Últimos movimientos</h3>
           <div id="recentList"></div>
+        </section>
+
+        <!-- ESTADÍSTICAS -->
+        <section class="view" id="view-estadisticas">
+          <div class="view-head"><h2>Estadísticas</h2><p>Tu dinero por día, semana y mes, con cobros confirmados.</p></div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="goView('inicio')" style="margin-bottom:14px">‹ Volver a Inicio</button>
+          <div id="estEmpty" class="empty" style="display:none">Aún no hay cobros confirmados.<br>Haz tu primer cobro y aquí verás tu dinero por día, semana y mes.</div>
+          <div id="estBody">
+            <div class="stats2">
+              <div class="stat"><b class="money" id="estHoy">$0.00</b><span>Dinero de hoy</span><span class="count" id="estHoyCount"></span></div>
+              <div class="stat"><b class="money" id="estSemana">$0.00</b><span>Dinero de la semana</span><span class="count" id="estSemanaCount"></span></div>
+            </div>
+            <div class="card charts-card" style="margin-top:14px">
+              <h3>Esta semana por método</h3>
+              <div id="estMetodo"></div>
+              <h4 class="chart-sub">Últimos 7 días</h4>
+              <div class="chart-days" id="estDias"></div>
+            </div>
+            <div class="balance" style="margin-top:14px">
+              <span>Dinero recaudado en el mes</span>
+              <div class="big" id="estMes">$0.00</div>
+              <div class="sub" id="estMesCount"></div>
+            </div>
+          </div>
         </section>
 
         <!-- CALCULADORA -->
@@ -479,7 +509,6 @@ footer.note{max-width:1120px;margin:0 auto;padding:0 18px 30px;color:var(--muted
       </main>
     </div>
   </div>
-  <footer class="note">m-pago · Prototipo escolar — entrega 23 de noviembre de 2026. Cobros simulados en modo prueba de Mercado Pago: no se mueve dinero real.</footer>
   <nav class="bottomnav" id="bottomNav"></nav>
 </div>
 
@@ -850,6 +879,7 @@ function buildNav(){
 function goView(id){
   document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id==='view-'+id); });
   document.querySelectorAll('[data-view]').forEach(function(b){ b.classList.toggle('active', b.dataset.view===id); });
+  if(id==='estadisticas') renderEstadisticas();
   window.scrollTo(0,0);
 }
 function goCharge(method){ goView('calculadora'); state.method = method; }
@@ -1152,6 +1182,7 @@ function updateHome(){
   $('recentList').innerHTML = state.transactions.length ? state.transactions.slice(0,3).map(txHtml).join('') :
     '<div class="empty">Aún no hay movimientos.<br>Arma tu primer cobro: suma productos en <b>Inventario</b> o escribe el monto en la <b>Calculadora</b>, confirma y elige QR, transferencia o NFC.</div>';
   renderCharts();
+  renderEstadisticas();
 }
 
 /* ---------------- Gráficas de Inicio (solo cobros confirmados) ---------------- */
@@ -1185,6 +1216,50 @@ function renderCharts(){
   }
   var maxD = Math.max.apply(null, dias.map(function(x){ return x.total; }).concat([0]));
   $('chartDias').innerHTML = dias.map(function(x){
+    var hgt = maxD>0 ? Math.max(4, Math.round(x.total/maxD*72)) : 4;
+    return '<div class="chart-day"><span class="chart-day-val">'+(x.total>0?moneyShort(x.total):'')+'</span><div class="chart-bar'+(x.hoy?' hoy':'')+'" style="height:'+hgt+'px"></div><span class="chart-day-label">'+x.label+'</span></div>';
+  }).join('');
+}
+
+/* ---------------- Estadísticas (día, semana y mes, solo cobros confirmados) ---------------- */
+function renderEstadisticas(){
+  var empty = $('estEmpty'), body = $('estBody');
+  if(!empty || !body) return;
+  var nowMs = Date.now();
+  var ok = state.transactions.filter(function(t){ return t.status==='exitoso'; });
+  if(!ok.length){ empty.style.display='block'; body.style.display='none'; return; }
+  empty.style.display='none'; body.style.display='block';
+  function suma(period){ return ok.filter(function(t){ return txInPeriod(t, period, nowMs); }).reduce(function(s,t){ return s+t.amount; }, 0); }
+  function cuenta(period){ return ok.filter(function(t){ return txInPeriod(t, period, nowMs); }).length; }
+  $('estHoy').textContent = money(suma('hoy'));
+  $('estHoyCount').textContent = cuenta('hoy') + ' cobro(s) confirmado(s) hoy';
+  $('estSemana').textContent = money(suma('semana'));
+  $('estSemanaCount').textContent = cuenta('semana') + ' cobro(s) confirmado(s) esta semana';
+  $('estMes').textContent = money(suma('mes'));
+  $('estMesCount').textContent = cuenta('mes') + ' cobro(s) confirmado(s) en los últimos 30 días';
+  /* Esta semana por método */
+  var met = {qr:0, transfer:0, nfc:0};
+  ok.forEach(function(t){ if(txInPeriod(t,'semana',nowMs)) met[t.method]=(met[t.method]||0)+t.amount; });
+  var maxM = Math.max(met.qr, met.transfer, met.nfc, 0);
+  var totalSem = met.qr + met.transfer + met.nfc;
+  $('estMetodo').innerHTML = totalSem>0
+    ? [['qr','Código QR'],['transfer','Transferencia'],['nfc','NFC']].map(function(r){
+        var v = met[r[0]];
+        var w = maxM>0 ? Math.round(v/maxM*100) : 0;
+        return '<div class="chart-row"><span class="chart-label">'+r[1]+'</span><div class="chart-track"><div class="chart-fill" style="width:'+w+'%"></div></div><b class="chart-val">'+money(v)+'</b></div>';
+      }).join('')
+    : '<p class="small" style="margin:0 0 10px">Esta semana aún no hay cobros confirmados.</p>';
+  /* Últimos 7 días */
+  function moneyShort(n){ return '$' + n.toLocaleString('es-MX',{maximumFractionDigits:0}); }
+  var dias = [];
+  for(var d=6; d>=0; d--){
+    var day = new Date(nowMs - d*24*60*60*1000);
+    var tot = 0;
+    ok.forEach(function(t){ var td=new Date(t.ts); if(td.getFullYear()===day.getFullYear()&&td.getMonth()===day.getMonth()&&td.getDate()===day.getDate()) tot+=t.amount; });
+    dias.push({label: day.toLocaleDateString('es-MX',{weekday:'short'}).replace('.',''), total: tot, hoy: d===0});
+  }
+  var maxD = Math.max.apply(null, dias.map(function(x){ return x.total; }).concat([0]));
+  $('estDias').innerHTML = dias.map(function(x){
     var hgt = maxD>0 ? Math.max(4, Math.round(x.total/maxD*72)) : 4;
     return '<div class="chart-day"><span class="chart-day-val">'+(x.total>0?moneyShort(x.total):'')+'</span><div class="chart-bar'+(x.hoy?' hoy':'')+'" style="height:'+hgt+'px"></div><span class="chart-day-label">'+x.label+'</span></div>';
   }).join('');
