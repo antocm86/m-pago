@@ -96,7 +96,6 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
 .biz span{font-size:12.5px;color:var(--muted);font-weight:700}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:99px;font-size:12px;font-weight:800;background:var(--brand-soft);color:var(--brand);white-space:nowrap}
 .pill.test{background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent-light)}
-.logout{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px}
 .biz{flex:1}
 .biz span{white-space:nowrap}
 @media(max-width:640px){.topbar .pill.test{display:none}}
@@ -343,7 +342,6 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="pill test">Mercado Pago · Modo prueba</span>
-        <button class="logout" onclick="logout()">Salir</button>
       </div>
     </div>
 
@@ -498,6 +496,35 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
               <p class="small" style="margin:0 0 6px">Se muestran los datos de tu registro. Toca Editar en cada dato para cambiarlo; se guarda en este teléfono.</p>
               <div id="perfilRows"></div>
               <div class="small" id="msgPerfil" role="status" style="display:none;margin-top:12px;font-weight:800"></div>
+            </div>
+          </div>
+          <div id="perfilNegocio" style="display:none">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="irPerfilSeccion('menu')" style="width:auto;margin-bottom:12px">‹ Volver</button>
+            <div class="card" style="padding:18px;margin-bottom:14px">
+              <h3 style="font-size:16px;margin-bottom:4px">Mi negocio</h3>
+              <p class="small" style="margin:0 0 12px">El nombre, el giro y el logo de tu negocio.</p>
+              <div id="negocioLogoBox" style="text-align:center;margin-bottom:6px"></div>
+              <div id="negocioRows"></div>
+              <div class="small" id="msgNegocio" role="status" style="display:none;margin-top:12px;font-weight:800"></div>
+            </div>
+          </div>
+          <div id="perfilSeguridad" style="display:none">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="irPerfilSeccion('menu')" style="width:auto;margin-bottom:12px">‹ Volver</button>
+            <div class="card" style="padding:18px;margin-bottom:14px">
+              <h3 style="font-size:16px;margin-bottom:4px">Seguridad</h3>
+              <p class="small" style="margin:0 0 6px">Tu contraseña y tu tarjeta. Toca Editar en cada dato para cambiarlo; se guarda en este teléfono.</p>
+              <div id="seguridadRows"></div>
+              <div class="small" id="msgSeguridad" role="status" style="display:none;margin-top:12px;font-weight:800"></div>
+            </div>
+          </div>
+          <div id="perfilAcerca" style="display:none">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="irPerfilSeccion('menu')" style="width:auto;margin-bottom:12px">‹ Volver</button>
+            <div class="card" style="padding:18px">
+              <h3 style="font-size:16px;margin-bottom:4px">Acerca de m-pago</h3>
+              <p class="small" style="margin:0 0 8px">Versión 1.0 · Entrega final, diciembre de 2026.</p>
+              <p class="small" style="margin:0 0 8px">m-pago cobra por transferencia, NFC y QR.</p>
+              <p class="small" style="margin:0 0 8px">Modo prueba: los cobros son simulados, no se mueve dinero real.</p>
+              <p class="small" style="margin:0">Tus datos, tu inventario y tu historial se guardan en este teléfono.</p>
             </div>
           </div>
           <div id="perfilApariencia" style="display:none">
@@ -1308,15 +1335,22 @@ function maskCard(v){
   return '************' + d.slice(-4);
 }
 var PERFIL_FIELDS = [
-  {key:'name', label:'Nombres y Apellidos', type:'text'},
-  {key:'direccion', label:'Dirección', type:'text'},
-  {key:'email', label:'Correo', type:'email'},
-  {key:'tel', label:'Numero', type:'tel'},
-  {key:'pass', label:'Contraseña', type:'password'},
-  {key:'tarjeta', label:'Tarjeta', type:'text'},
-  {key:'biz', label:'Nombre del negocio', type:'text'},
-  {key:'giro', label:'Giro del negocio', type:'text'}
+  {key:'name', label:'Nombres y Apellidos', type:'text', sec:'datos'},
+  {key:'direccion', label:'Dirección', type:'text', sec:'datos'},
+  {key:'email', label:'Correo', type:'email', sec:'datos'},
+  {key:'tel', label:'Numero', type:'tel', sec:'datos'},
+  {key:'pass', label:'Contraseña', type:'password', sec:'seguridad'},
+  {key:'tarjeta', label:'Tarjeta', type:'text', sec:'seguridad'},
+  {key:'biz', label:'Nombre del negocio', type:'text', sec:'negocio'},
+  {key:'giro', label:'Giro del negocio', type:'text', sec:'negocio'}
 ];
+/* Cada sección de Perfil tiene su lista de datos y su mensaje (datos, negocio, seguridad) */
+var PERFIL_SECCIONES = {
+  datos: {rows:'perfilRows', msg:'msgPerfil'},
+  negocio: {rows:'negocioRows', msg:'msgNegocio'},
+  seguridad: {rows:'seguridadRows', msg:'msgSeguridad'}
+};
+function msgSeccion(){ var c = PERFIL_SECCIONES[perfilSeccion]; return c ? $(c.msg) : $('msgPerfil'); }
 var perfilEditando = null;
 var perfilSeccion = 'menu'; /* menú | datos | apariencia | cerrar (mockup p.17) */
 function perfilValor(f){
@@ -1328,13 +1362,14 @@ function perfilValor(f){
 function irPerfilSeccion(s){ perfilSeccion = s; renderPerfil(); window.scrollTo(0,0); }
 function renderPerfil(){
   if(!state.user) return;
-  var menu = $('perfilMenu'), datos = $('perfilDatos'), apar = $('perfilApariencia'), cerrar = $('perfilCerrar');
-  if(menu) menu.style.display = 'none';
-  if(datos) datos.style.display = 'none';
-  if(apar) apar.style.display = 'none';
-  if(cerrar) cerrar.style.display = 'none';
+  var menu = $('perfilMenu'), datos = $('perfilDatos'), nego = $('perfilNegocio'), segu = $('perfilSeguridad'),
+      apar = $('perfilApariencia'), acer = $('perfilAcerca'), cerrar = $('perfilCerrar');
+  [menu, datos, nego, segu, apar, acer, cerrar].forEach(function(el){ if(el) el.style.display = 'none'; });
   if(perfilSeccion === 'datos'){ if(datos) datos.style.display = 'block'; renderPerfilRows(); return; }
+  if(perfilSeccion === 'negocio'){ if(nego) nego.style.display = 'block'; renderNegocio(); return; }
+  if(perfilSeccion === 'seguridad'){ if(segu) segu.style.display = 'block'; renderPerfilRows(); return; }
   if(perfilSeccion === 'apariencia'){ if(apar) apar.style.display = 'block'; return; }
+  if(perfilSeccion === 'acerca'){ if(acer) acer.style.display = 'block'; return; }
   if(perfilSeccion === 'cerrar'){ if(cerrar) cerrar.style.display = 'block'; return; }
   if(!menu) return;
   menu.style.display = 'block';
@@ -1356,8 +1391,11 @@ function renderPerfil(){
       '<div class="small" id="msgFoto" role="status" style="display:none;margin-top:10px;font-weight:800"></div>' +
     '</div>' +
     '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'datos\')">Datos Personales</button>' +
+    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'negocio\')">Mi negocio</button>' +
+    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'seguridad\')">Seguridad</button>' +
     '<button class="menu-sec" type="button" onclick="goView(\'historial\')">Historial de pagos</button>' +
-    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'apariencia\')">Apariencia</button>';
+    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'apariencia\')">Apariencia</button>' +
+    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'acerca\')">Acerca de</button>';
 }
 /* Foto de perfil: se achica a 256 px y se guarda en este teléfono junto con la cuenta */
 function cambiarFoto(input){
@@ -1394,9 +1432,60 @@ function quitarFoto(){
   if(!state.user.demo){ try{ guardarCuenta(state.user); }catch(e){} }
   renderPerfil();
 }
+/* Logo del negocio (sección Mi negocio): igual que la foto de perfil, se achica y se guarda */
+function renderNegocio(){
+  renderPerfilRows();
+  var box = $('negocioLogoBox'); if(!box) return;
+  var logo = state.user.bizLogo || '';
+  var prev = logo
+    ? '<img src="' + esc(logo) + '" alt="Logo del negocio" style="width:96px;height:96px;object-fit:contain;border:1px solid var(--line);border-radius:14px;background:var(--surface);display:block;margin:0 auto">'
+    : '<div style="width:96px;height:96px;border:1px dashed var(--line);border-radius:14px;display:grid;place-items:center;color:var(--muted);font-weight:700;margin:0 auto">Sin logo</div>';
+  var quitarBtn = logo ? '<button class="btn btn-ghost btn-sm" type="button" style="width:auto" onclick="quitarLogo()">Quitar logo</button>' : '';
+  box.innerHTML = prev +
+    '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px">' +
+      '<button class="btn btn-brand btn-sm" type="button" style="width:auto" onclick="document.getElementById(\'logoInput\').click()">Cambiar logo</button>' + quitarBtn +
+    '</div>' +
+    '<input type="file" id="logoInput" accept="image/*" style="display:none" onchange="cambiarLogo(this)">' +
+    '<div class="small" id="msgLogo" role="status" style="display:none;margin-top:10px;font-weight:800"></div>';
+}
+function cambiarLogo(input){
+  var file = input && input.files && input.files[0];
+  if(!file) return;
+  function fail(t){ var m = $('msgLogo'); if(m){ m.textContent = t; m.style.color = 'var(--danger)'; m.style.display = 'block'; } }
+  if(!/^image\//.test(file.type || '')){ fail('Elige una imagen (una foto de tu galería).'); input.value = ''; return; }
+  var reader = new FileReader();
+  reader.onload = function(){
+    var img = new Image();
+    img.onload = function(){
+      var max = 256, w = img.width || max, h = img.height || max;
+      if(w > max || h > max){ var k = Math.min(max / w, max / h); w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k)); }
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      var url = '';
+      try{ url = cv.toDataURL('image/jpeg', 0.82); }catch(e){ return fail('No se pudo guardar el logo, intenta con otra imagen.'); }
+      if(!url || url.length < 100) return fail('No se pudo guardar el logo, intenta con otra imagen.');
+      state.user.bizLogo = url;
+      if(!state.user.demo){ try{ guardarCuenta(state.user); }catch(e){} }
+      renderPerfil();
+      var m = $('msgLogo'); if(m){ m.textContent = 'Logo guardado en este teléfono.'; m.style.color = 'var(--brand-strong)'; m.style.display = 'block'; }
+    };
+    img.onerror = function(){ fail('No se pudo leer esa imagen, intenta con otra.'); };
+    img.src = reader.result;
+  };
+  reader.onerror = function(){ fail('No se pudo leer esa imagen, intenta con otra.'); };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function quitarLogo(){
+  if(!state.user) return;
+  delete state.user.bizLogo;
+  if(!state.user.demo){ try{ guardarCuenta(state.user); }catch(e){} }
+  renderPerfil();
+}
 function renderPerfilRows(){
   if(!state.user) return;
-  var html = PERFIL_FIELDS.map(function(f){
+  var c = PERFIL_SECCIONES[perfilSeccion] || PERFIL_SECCIONES.datos;
+  var html = PERFIL_FIELDS.filter(function(f){ return f.sec === perfilSeccion; }).map(function(f){
     var val = perfilValor(f);
     var main = '<b>'+f.label+'</b>';
     if(perfilEditando === f.key){
@@ -1418,12 +1507,12 @@ function renderPerfilRows(){
     return '<div class="dato-row"><div class="dato-main">'+main+'</div>' +
       '<button class="btn btn-ghost btn-sm" style="width:auto" onclick="editarPerfil(\''+f.key+'\')">Editar</button></div>';
   }).join('');
-  $('perfilRows').innerHTML = html;
+  $(c.rows).innerHTML = html;
 }
-function editarPerfil(key){ perfilEditando = key; var m=$('msgPerfil'); if(m) m.style.display='none'; renderPerfil(); }
+function editarPerfil(key){ perfilEditando = key; var m = msgSeccion(); if(m) m.style.display='none'; renderPerfil(); }
 function cancelarPerfilRow(){ perfilEditando = null; renderPerfil(); }
 function guardarPerfilRow(key){
-  var err = $('msgPerfil'); err.style.display='none'; err.style.color='';
+  var err = msgSeccion(); err.style.display='none'; err.style.color='';
   function fail(msg){ err.textContent=msg; err.style.color='var(--danger)'; err.style.display='block'; }
   var correoAntes = state.user ? state.user.email : '';
   if(key === 'pass'){
