@@ -511,15 +511,20 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
                 <button type="button" data-apar="oscuro" onclick="setApariencia('oscuro')">Oscuro</button>
               </div>
             </div>
+            <div class="card" style="padding:18px">
+              <h3 style="font-size:16px;margin-bottom:4px">Sesión</h3>
+              <p class="small" style="margin:0 0 10px">Al cerrar sesión vuelves a la pantalla de acceso. Tu inventario y tu historial quedan guardados en este teléfono.</p>
+              <button class="btn btn-ghost" type="button" onclick="irPerfilSeccion('cerrar')">Cerrar Sesión</button>
+            </div>
           </div>
           <div id="perfilCerrar" style="display:none">
-            <button class="btn btn-ghost btn-sm" type="button" onclick="irPerfilSeccion('menu')" style="width:auto;margin-bottom:12px">‹ Volver</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="irPerfilSeccion('apariencia')" style="width:auto;margin-bottom:12px">‹ Volver</button>
             <div class="card" style="padding:18px">
               <h3 style="font-size:16px;margin-bottom:4px">Cerrar Sesión</h3>
               <p class="small" style="margin:0 0 14px">¿Seguro que quieres cerrar sesión? Tu inventario y tu historial quedan guardados en este teléfono.</p>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <button class="btn btn-brand" type="button" style="width:auto" onclick="logout()">Aceptar</button>
-                <button class="btn btn-ghost" type="button" style="width:auto" onclick="irPerfilSeccion('menu')">Cancelar</button>
+                <button class="btn btn-ghost" type="button" style="width:auto" onclick="irPerfilSeccion('apariencia')">Cancelar</button>
               </div>
             </div>
           </div>
@@ -1352,8 +1357,7 @@ function renderPerfil(){
     '</div>' +
     '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'datos\')">Datos Personales</button>' +
     '<button class="menu-sec" type="button" onclick="goView(\'historial\')">Historial de pagos</button>' +
-    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'apariencia\')">Apariencia</button>' +
-    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'cerrar\')">Cerrar Sesión</button>';
+    '<button class="menu-sec" type="button" onclick="irPerfilSeccion(\'apariencia\')">Apariencia</button>';
 }
 /* Foto de perfil: se achica a 256 px y se guarda en este teléfono junto con la cuenta */
 function cambiarFoto(input){
