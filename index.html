@@ -235,8 +235,9 @@ input:focus,select:focus{outline:2px solid var(--brand-strong);border-color:tran
 @media(min-width:640px){.sheet{border-radius:22px}}
 .sheet h3{font-size:20px}
 .method-detail{background:var(--surface2);border-radius:14px;padding:18px;text-align:center;margin-top:14px}
-.qr-box{width:168px;height:168px;margin:0 auto;background:#fff;border-radius:12px;padding:10px}
+.qr-box{width:168px;height:auto;margin:0 auto;background:#fff;border-radius:12px;padding:10px 10px 8px}
 .qr-box svg{width:100%;height:100%}
+.qr-amount{text-align:center;font-weight:800;color:#17302E;font-size:17px;margin-top:6px}
 .mono{font-family:var(--mono);font-size:13.5px;word-break:break-all}
 .nfc-rings{width:110px;height:110px;margin:6px auto;border-radius:50%;border:3px solid var(--brand);display:grid;place-items:center;animation:pulse 1.6s ease-in-out infinite;color:var(--brand-strong);background:var(--brand-soft)}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.07);opacity:.7}}
@@ -716,7 +717,7 @@ function cargarTransacciones(){
     if(Array.isArray(g)) state.transactions = g;
   }catch(e){}
 }
-var state = { user:null, cart:{}, manual:0, calcExpr:[], calcEntry:'', calcJustEq:false, transactions:[], method:'qr', result:'ok', filter:'all', period:'all', lastTx:null };
+var state = { user:null, cart:{}, manual:0, calcExpr:[], calcEntry:'', calcJustEq:false, transactions:[], method:'qr', result:'ok', filter:'all', period:'all', lastTx:null, payRef:null };
 var NAV = [
   {id:'inicio', label:'Inicio', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z"/></svg>'},
   {id:'calculadora', label:'Calculadora', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>'},
@@ -1093,6 +1094,7 @@ function renderInvBar(){
 function openPayment(){
   if(cartTotal()<=0) return;
   $('confirmAmt').textContent = money(cartTotal());
+  state.payRef = 'MPAGO-' + Math.floor(1000+Math.random()*9000);
   state.nfcTapDone = false;
   showPayStep('payStepConfirm'); setMethod(state.method||'qr'); setResult('ok');
   $('payOverlay').classList.add('open');
@@ -1103,14 +1105,15 @@ function showPayStep(id){
 }
 function setMethod(m){
   state.method = m; state.nfcTapDone = false;
+  if(!state.payRef) state.payRef = 'MPAGO-' + Math.floor(1000+Math.random()*9000);
   document.querySelectorAll('#methodSeg button').forEach(function(b){ b.classList.toggle('active', b.dataset.method===m); });
   var d = $('methodDetail');
   if(m==='qr'){
-    d.innerHTML = '<div class="qr-box">'+qrSvg()+'</div><p class="small" style="margin-top:10px">Muestra este código a tu cliente para que pague <b>'+money(cartTotal())+'</b> desde su celular.</p>';
+    d.innerHTML = '<div class="qr-box">'+qrSvg()+'<div class="qr-amount">'+money(cartTotal())+'</div></div><p class="small" style="margin-top:10px">Muestra este código a tu cliente para que pague <b>'+money(cartTotal())+'</b> desde su celular.</p>';
   } else if(m==='transfer'){
     d.innerHTML = '<p class="small" style="margin:0 0 6px">Tu cliente transfiere a esta cuenta de demostración:</p>' +
       '<div class="mono">CLABE demo · 012 1800 0000 0000 001</div>' +
-      '<div class="mono" style="margin-top:4px">Referencia · MPAGO-'+Math.floor(1000+Math.random()*9000)+'</div>' +
+      '<div class="mono" style="margin-top:4px">Referencia · '+state.payRef+'</div>' +
       '<p class="small" style="margin-top:8px">Monto exacto: <b>'+money(cartTotal())+'</b>. La confirmación llega por SPEI.</p>';
   } else {
     d.innerHTML = '<div class="nfc-rings"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8.5a8 8 0 0 1 0 7M9.5 6a11.5 11.5 0 0 1 0 12M13 3.5a16 16 0 0 1 0 17"/></svg></div>' +
@@ -1133,7 +1136,9 @@ function setResult(r){
   document.querySelectorAll('#resultSeg button').forEach(function(b){ b.classList.toggle('active', b.dataset.result===r); });
 }
 function retryPayment(){
-  setResult('ok'); state.nfcTapDone = false;
+  // El reintento conserva el resultado elegido (Exitoso/Rechazado):
+  // el usuario puede cambiarlo en la pantalla de confirmación antes de volver a cobrar.
+  state.nfcTapDone = false;
   showPayStep('payStepConfirm');
 }
 function confirmNfcTap(){
@@ -1152,6 +1157,7 @@ function processPayment(){
   procesarPagoMercadoPago(cartTotal(), state.method, state.result).then(function(res){
     var now = new Date();
     var tx = { id:res.id, amount:res.monto, method:res.metodo, status:res.estado, ts: now.getTime(),
+      ref: res.metodo==='transfer' ? state.payRef : null,
       when: now.toLocaleDateString('es-MX',{day:'numeric',month:'short'}) + ' · ' + now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}),
       detail: cartDescription() };
     state.transactions.unshift(tx); state.lastTx = tx;
@@ -1165,7 +1171,7 @@ function processPayment(){
     $('resultText').textContent = ok
       ? 'El cobro quedó registrado en tu historial. Tu cliente ya puede irse tranquilo.'
       : 'Mercado Pago no autorizó el cobro. No se hizo ningún cargo; puedes intentarlo con otro método.';
-    $('resultSummary').innerHTML = 'Folio: <b>'+tx.id+'</b><br>Monto: <b>'+money(tx.amount)+'</b><br>Método: <b>'+methodName(tx.method)+'</b><br>Fecha: <b>'+tx.when+'</b>';
+    $('resultSummary').innerHTML = 'Folio: <b>'+tx.id+'</b><br>Monto: <b>'+money(tx.amount)+'</b><br>Método: <b>'+methodName(tx.method)+'</b><br>Fecha: <b>'+tx.when+'</b>' + (tx.method==='transfer' && tx.ref ? '<br>Referencia: <b>'+tx.ref+'</b>' : '');
     $('retryBtn').classList.toggle('hidden', ok);
     if(ok) clearCart();
     renderHistory(); updateHome();
@@ -1189,7 +1195,7 @@ function methodIcon(m){
 function txHtml(tx){
   var ok = tx.status==='exitoso';
   return '<div class="tx"><div class="ic">'+methodIcon(tx.method)+'</div>' +
-    '<div class="tx-main"><b>'+methodName(tx.method)+'</b><span>'+esc(tx.detail)+' · '+tx.when+' · Folio '+tx.id+'</span></div>' +
+    '<div class="tx-main"><b>'+methodName(tx.method)+'</b><span>'+esc(tx.detail)+' · '+tx.when+' · Folio '+tx.id+(tx.method==='transfer' && tx.ref ? ' · Ref. '+tx.ref : '')+'</span></div>' +
     '<div class="tx-amt">'+money(tx.amount)+'<br><span class="status '+(ok?'ok':'bad')+'">'+(ok?'Exitoso':'Rechazado')+'</span></div></div>';
 }
 function txInPeriod(tx, period, nowMs){
